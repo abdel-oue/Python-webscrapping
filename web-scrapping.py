@@ -129,6 +129,14 @@ def insert_many_names_to_db(con, listofnames: list, year: str):
         return False
     
 if __name__ == '__main__':
+
+    logging.basicConfig(
+        level=logging.DEBUG,  # show all DEBUG/INFO/WARNING/ERROR
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        filename='app.log',   # logs go into this file
+        filemode='w'          # overwrite file each run ('a' to append)
+    )
+
     con = get_connection()
     creating_tables(con)
     listoffiles = ["baby1990.html", "baby1992.html", "baby1994.html", "baby1996.html",
