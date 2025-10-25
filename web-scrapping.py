@@ -3,6 +3,14 @@ from os import path
 from bs4 import BeautifulSoup # beautifulsoup for web scraping
 from mysql import connector
 
+def get_connection():
+    return connector.connect(
+        user='root',
+        password='',
+        database='PythonScraping',
+        host='127.0.0.1',
+        port=3306
+    )
 def extract_babies(url :str) ->list[tuple[str,...]]: # we want to return a list of tuple (rank , male name, female name)
     with open(url,'r') as htmlfile:
         all_names = []
@@ -41,27 +49,59 @@ def extract_info(url: str) -> tuple[list[tuple[str, ...]], str]:
         print(f'{url} permission denied')
         return [], ''
 
-def get_connection():
-    return connector.connect(
-        user='root',
-        password='',
-        database='PythonScraping',
-        host='127.0.0.1',
-        port=3306
-    )
 
-def creating_tables():
+
+def creating_tables(con):
     querys=['CREATE TABLE male_names (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(50) NOT NULL,year YEAR NOT NULL,rank INT NOT NULL);'
             ,'CREATE TABLE female_names (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(50) NOT NULL,year YEAR NOT NULL,rank INT NOT NULL);']
     try:
-        con = get_connection()
         cursor = con.cursor()
         for query in querys:
             cursor.execute(query)
         con.commit()
-    except Exception as e:
-        print(e)
+    except Exception:
+        return False
 
+
+"""
+This function inserts one name to the database PythonScraping
+"""
+def insert_name_to_db(con, rank :int, year :str,name :str, gender:str): 
+    try:
+        if gender == 'female':
+            query = 'INSERT INTO female_names(name,year,rank) VALUES(%s,%s,%s); '
+        else:
+            query = 'INSERT INTO male_names(name,year,rank) VALUES(%s,%s,%s) '
+        cursor = con.cursor()
+        cursor.execute(query,(name,year,rank))
+        con.commit()
+    except Exception:
+        return False
+
+"""
+This function inserts many name to the database PythonScraping
+"""
+
+def insert_many_names_to_db(con, listofnames :list, year :str):
+    try:
+        querys=['INSERT INTO male_names(name,year,rank) VALUES(%s,%s,%s);'
+            ,'INSERT INTO female_names(name,year,rank) VALUES(%s,%s,%s);']
+        cursor = con.cursor()
+        for name in listofnames:
+            rank = name[0]
+            male_name = name[1]
+            female_name = name[2]
+            cursor.execute(querys[0],(male_name,year,rank))
+            cursor.execute(querys[1],(female_name,year,rank))
+        con.commit()
+    except Exception:
+        return False
+    
 if __name__ == '__main__':
-    #extract_popularity_year('./data/baby1990.html')
-    creating_tables()
+    con = get_connection()
+    listoffiles=["baby1990.html","baby1992.html","baby1994.html","baby1996.html","baby1998.html","baby2000.html","baby2002.html","baby2004.html","baby2006.html","baby2008.html"]
+
+    for file in listoffiles:
+        listofnames,year=extract_info("./data/" + file)
+        insert_many_names_to_db(con,listofnames,year)
+    
