@@ -1,67 +1,125 @@
-# 👶 Baby Name Popularity Scraper
+# 🍼 Python Baby Names Web Scraper
 
-A Python script to scrape popular baby names data from local HTML files using **BeautifulSoup** and load the structured data into a **MySQL** database.
-
----
-
-## ✨ Key Features
-
-* **HTML Parsing:** Extracts baby name rankings (Rank, Male Name, Female Name) and the year of popularity from HTML files located in the `./data` directory.
-* **Database Integration:** Connects to a local MySQL database (`PythonScraping`).
-* **Schema Management:** Automatically creates `male_names` and `female_names` tables upon first run.
-* **Batch Processing:** Efficiently processes a list of files and performs bulk data insertion for optimal performance.
-* **Robust Logging:** Detailed logging of connection status, extraction, and database transactions to **`app.log`**.
+this project scrapes baby name data from HTML files (like those “popular baby names by year” pages)  
+and stores it inside a MySQL database.  
+it extracts **rank**, **male name**, **female name**, and **year**, then saves them into two tables.
 
 ---
 
-## ⚙️ Setup & Prerequisites
+## 📂 Project Structure
 
-1.  **Dependencies:** Install the required Python libraries:
-    ```bash
-    pip install mysql-connector-python beautifulsoup4 lxml
-    ```
-
-2.  **MySQL Database:**
-    * Ensure your MySQL server is running.
-    * A database named **`PythonScraping`** must exist.
-    * **Note:** The script attempts to connect as `user='root'` with `password=''` on `host='127.0.0.1:3306'`. Adjust the `get_connection()` function if your credentials differ.
-
-3.  **Data Files:**
-    * Place all source HTML files (e.g., `baby1990.html`, `baby2008.html`) into the **`data/`** subdirectory.
+```
+Python webscrapping/
+│
+├── data/                 # folder with baby*.html files
+├── web-scrapping.py      # main script (where the magic happens)
+├── app.log               # log file generated during execution
+├── .gitignore            # ignore logs, cache, etc.
+└── README.md             # this file
+```
 
 ---
 
-## 🚀 Getting Started
+## ⚙️ What It Does
 
-1.  Place the `web-scrapping.py` script and the `data/` folder in your project directory.
-2.  Execute the script from your terminal:
+1. **Scrape HTML**
+   - reads baby name HTML files using `BeautifulSoup`
+   - extracts `(rank, male_name, female_name)` from `<tr align="right">`
+   - extracts year from `<h3 align="center">`
 
-    ```bash
-    python web-scrapping.py
-    ```
+2. **Database Integration**
+   - connects to MySQL database `PythonScraping`
+   - auto-creates two tables:
+     - `male_names(id, name, year, rank)`
+     - `female_names(id, name, year, rank)`
+   - inserts all scraped data per year
 
-The script will read each HTML file, extract the names and the year, and commit the data to the corresponding `male_names` and `female_names` tables in your database.
-
----
-
-## 💾 Database Structure
-
-The `male_names` and `female_names` tables share the same schema:
-
-| Column | Data Type | Description |
-| :--- | :--- | :--- |
-| **`id`** | INT (PK, AI) | Unique record identifier. |
-| **`name`** | VARCHAR(50) | The popular baby name. |
-| **`year`** | YEAR | The year the ranking applies to. |
-| **`rank`** | INT | The popularity rank (1, 2, 3, etc.). |
+3. **Logging Everything**
+   - saves logs in `app.log` (connection status, insertions, errors, etc.)
 
 ---
 
-## 🗺️ Project Files
+## 🧠 How to Run
 
-| File/Directory | Description |
-| :--- | :--- |
-| `web-scrapping.py` | Main script containing all logic for connection, extraction, and insertion. |
-| `data/` | Directory holding the source HTML files. |
-| `app.log` | Detailed log file generated during execution. |
-| `README.md` | This documentation file. |
+### 1️⃣ Requirements
+make sure you have:
+- Python 3.10+
+- MySQL server running locally
+- installed dependencies:
+  ```bash
+  pip install beautifulsoup4 lxml mysql-connector-python
+  ```
+
+### 2️⃣ Database Setup
+create database:
+```sql
+CREATE DATABASE PythonScraping;
+```
+
+### 3️⃣ Run the Script
+make sure your HTML files are inside the `/data` folder, named like:
+```
+baby1990.html, baby1992.html, baby1994.html ...
+```
+
+then run:
+```bash
+python web-scrapping.py
+```
+
+you’ll see logs inside `app.log`, and data inside MySQL tables.
+
+---
+
+## 🧩 Example
+
+**HTML sample (simplified):**
+```html
+<h3 align="center">Popularity in 2000</h3>
+<tr align="right">
+  <td>1</td><td>Michael</td><td>Emily</td>
+</tr>
+```
+
+**Result in database:**
+
+| id | name     | year | rank |
+|----|----------|------|------|
+| 1  | Michael  | 2000 | 1    |
+| 1  | Emily    | 2000 | 1    |
+
+---
+
+## 🪛 Functions Breakdown
+
+| Function | Description |
+|-----------|-------------|
+| `get_connection()` | connects to MySQL |
+| `extract_babies(url)` | extracts `(rank, male, female)` list |
+| `extract_popularity_year(url)` | grabs year from HTML |
+| `extract_info(url)` | returns names + year as tuple |
+| `creating_tables(con)` | creates `male_names`, `female_names` |
+| `insert_name_to_db(con, rank, year, name, gender)` | insert single name |
+| `insert_many_names_to_db(con, listofnames, year)` | insert all from file |
+
+---
+
+## 🧾 Logs Example
+
+```
+2025-10-25 18:54:10 - INFO - Connected to MySQL database successfully.
+2025-10-25 18:54:12 - INFO - Inserted 1000 names for year 2000
+```
+
+---
+
+## 💡 Notes
+
+- put HTML files inside `/data/`
+- logs overwrite each run (change `'w'` → `'a'` in logging config to append)
+- if script crashes, check `app.log` for the reason
+
+---
+
+## 👨‍💻 Author
+**Abdelaziz Ouedghiri** 
